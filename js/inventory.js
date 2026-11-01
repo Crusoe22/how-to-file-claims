@@ -13,6 +13,7 @@
   const MAX_PHOTOS = 50;
   const ANALYZE_MAX_EDGE = 1568; // px; larger images cost more without helping accuracy
   const ANALYZE_QUALITY = 0.85;  // JPEG quality for the copy sent to the server
+  const THUMB_SIZE = 240;        // px; square thumbnail used in the PDF export
 
   /**
    * @typedef {Object} Photo
@@ -21,6 +22,7 @@
    * @property {string} url                 object URL for the preview
    * @property {"idle"|"loading"|"done"|"error"} status
    * @property {Object|null} result          analysis from /api/analyze
+   * @property {string|null} thumb           small JPEG data URL, set after analysis (for PDF)
    * @property {string} error
    */
   /** @type {Photo[]} */
@@ -38,8 +40,42 @@
       status: document.getElementById("upload-status"),
       clearAll: document.getElementById("clear-all"),
       maxSize: document.getElementById("max-size"),
+      exportSection: document.getElementById("export-section"),
+      exportSummary: document.getElementById("export-summary"),
+      exportPending: document.getElementById("export-pending"),
+      exportCsv: document.getElementById("export-csv"),
+      exportPdf: document.getElementById("export-pdf"),
+      preparedFor: document.getElementById("prepared-for"),
+      policyNumber: document.getElementById("policy-number"),
     };
     if (!els.dropzone) return;
+
+    els.exportCsv.addEventListener("click", function () {
+      const items = analyzedItems();
+      if (!items.length) return;
+      window.InventoryExport.downloadCSV(items);
+      setStatus("Downloaded a spreadsheet with " + items.length + " item" + (items.length === 1 ? "" : "s") + ".");
+    });
+
+    els.exportPdf.addEventListener("click", async function () {
+      const items = analyzedItems();
+      if (!items.length) return;
+      els.exportPdf.disabled = true;
+      els.exportPdf.textContent = "Creating PDF…";
+      try {
+        await window.InventoryExport.downloadPDF(items, {
+          preparedFor: els.preparedFor.value.trim(),
+          policyNumber: els.policyNumber.value.trim(),
+        });
+        setStatus("Downloaded a PDF with " + items.length + " item" + (items.length === 1 ? "" : "s") + ".");
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || "Couldn't create the PDF. Please try again.", true);
+      } finally {
+        els.exportPdf.textContent = "Download PDF";
+        renderExport();
+      }
+    });
 
     els.maxSize.textContent = MAX_FILE_MB;
 
@@ -98,6 +134,7 @@
           url: URL.createObjectURL(file),
           status: "idle",
           result: null,
+          thumb: null,
           error: "",
         });
         added++;
@@ -134,7 +171,7 @@
       const response = await fetch("api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(image),
+        body: JSON.stringify({ mediaType: image.mediaType, data: image.data }),
       });
       const body = await response.json().catch(function () { return null; });
 
@@ -147,6 +184,7 @@
         );
       }
       photo.result = body;
+      photo.thumb = image.thumb;
       photo.status = "done";
     } catch (err) {
       photo.status = "error";
@@ -192,7 +230,23 @@
     if (bitmap.close) bitmap.close();
 
     const dataUrl = canvas.toDataURL("image/jpeg", ANALYZE_QUALITY);
-    return { mediaType: "image/jpeg", data: dataUrl.slice(dataUrl.indexOf(",") + 1) };
+
+    // Small square copy (center-cropped) kept in the browser for the PDF export.
+    // It is never sent to the server.
+    const side = Math.min(canvas.width, canvas.height);
+    const thumb = document.createElement("canvas");
+    thumb.width = thumb.height = Math.min(THUMB_SIZE, side);
+    thumb.getContext("2d").drawImage(
+      canvas,
+      (canvas.width - side) / 2, (canvas.height - side) / 2, side, side,
+      0, 0, thumb.width, thumb.height
+    );
+
+    return {
+      mediaType: "image/jpeg",
+      data: dataUrl.slice(dataUrl.indexOf(",") + 1),
+      thumb: thumb.toDataURL("image/jpeg", 0.75),
+    };
   }
 
   /* ---------- Rendering ---------- */
@@ -201,6 +255,71 @@
     els.count.textContent = photos.length;
     els.empty.hidden = photos.length > 0;
     els.clearAll.hidden = photos.length === 0;
+    renderExport();
+  }
+
+  /* ---------- Export section ---------- */
+  function analyzedItems() {
+    return photos
+      .filter(function (p) { return p.status === "done" && p.result; })
+      .map(function (p) {
+        return Object.assign({}, p.result, { fileName: p.file.name, thumb: p.thumb });
+      });
+  }
+
+  function renderExport() {
+    const X = window.InventoryExport;
+    const items = analyzedItems();
+    const notAnalyzed = photos.length - items.length;
+
+    els.exportSection.hidden = photos.length === 0;
+    els.exportCsv.disabled = items.length === 0;
+    els.exportPdf.disabled = items.length === 0;
+
+    if (notAnalyzed > 0) {
+      els.exportPending.textContent = items.length === 0
+        ? "Analyze at least one photo to create an export."
+        : notAnalyzed + " photo" + (notAnalyzed === 1 ? " hasn't" : "s haven't") +
+          " been analyzed yet and won't be included.";
+      els.exportPending.hidden = false;
+    } else {
+      els.exportPending.hidden = true;
+    }
+
+    if (!items.length) {
+      els.exportSummary.replaceChildren();
+      return;
+    }
+
+    const rows = X.groupByCategory(items).map(function (g) {
+      const tr = document.createElement("tr");
+      tr.append(el("td", "", g.category), el("td", "num", String(g.items.length)), el("td", "num", X.rangeText(g.low, g.high)));
+      return tr;
+    });
+    const all = X.totals(items);
+    const totalRow = document.createElement("tr");
+    totalRow.className = "total-row";
+    totalRow.append(el("th", "", "Total"), el("td", "num", String(all.count)), el("td", "num", X.rangeText(all.low, all.high)));
+    totalRow.firstChild.setAttribute("scope", "row");
+
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    ["Category", "Items", "Estimated value"].forEach(function (h, i) {
+      const th = el("th", i ? "num" : "", h);
+      th.setAttribute("scope", "col");
+      headRow.append(th);
+    });
+    thead.append(headRow);
+    const tbody = document.createElement("tbody");
+    tbody.append.apply(tbody, rows);
+    const tfoot = document.createElement("tfoot");
+    tfoot.append(totalRow);
+    table.append(thead, tbody, tfoot);
+
+    const wrap = el("div", "table-wrap");
+    wrap.append(table);
+    els.exportSummary.replaceChildren(wrap);
   }
 
   function photoCard(photo) {

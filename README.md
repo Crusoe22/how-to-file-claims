@@ -1,8 +1,17 @@
 # How to File Claims: FL Claims Guide
 
-A free, educational website that explains, in plain language, how to file **health, auto, and home insurance claims in Florida** and points people to the resources that can help them.
+A free, educational website that explains, in plain language, how to file **health, auto, and home insurance claims in Florida** and points people to the resources that can help them. It also includes an **AI home inventory tool**: users photograph their valuables, AI identifies and values each item, and they download a PDF or CSV to send to their insurer.
 
-> **Status: v1 (educational, placeholder content).** The site structure, styling, and navigation are in place. Most facts, phone numbers, deadlines, and links are **placeholders** and must be verified before launch. See [Placeholder content](#placeholder-content).
+> **Status (November 2026)**
+>
+> | Area | State |
+> |---|---|
+> | Claim guides (health, auto, home) and resources page | ✅ Built. ⚠️ Most facts, phone numbers, deadlines, and links are **placeholders** that must be verified before launch. See [Placeholder content](#placeholder-content). |
+> | Home inventory: photo upload | ✅ Done |
+> | Home inventory: AI identification, category, and value estimate | ✅ Done. Needs an API key; see [Getting started](#getting-started). |
+> | Home inventory: PDF/CSV export | ✅ Done |
+> | Hosting | ⚠️ GitHub Pages serves the pages, but **the AI feature needs a Node.js host** (for example Render). See [Deployment](#deployment). |
+> | Next up | Web-search pricing, saving the inventory between visits. See [Roadmap](#roadmap). |
 
 ---
 
@@ -89,7 +98,9 @@ how-to-file-claims/
 │   └── styles.css    # All site styles (tokens → base → layout → components)
 ├── js/
 │   ├── main.js       # Nav toggle, active-link highlight, resource filter
-│   └── inventory.js  # Photo intake and "Analyze with AI" for inventory.html
+│   ├── inventory.js  # Photo intake and "Analyze with AI" for inventory.html
+│   ├── inventory-export.js  # CSV / PDF export for inventory.html
+│   └── vendor/       # Third-party libraries copied in (don't edit; see below)
 ├── assets/
 │   └── images/       # Images and icons (currently empty)
 ├── server.js         # Express server: serves the site + POST /api/analyze
@@ -210,10 +221,34 @@ The server returns this JSON shape. Claude is required to match it exactly:
 
 **Estimates come from Claude's general knowledge, not live prices.** Treat them as ballpark figures.
 
+### Export (CSV and PDF)
+
+After at least one photo is analyzed, an **Export your inventory** section appears with:
+
+- A **summary table** of item count and estimated value per category, plus totals.
+- Optional **Your name** and **Policy number** fields. These only appear on the PDF and are never sent anywhere.
+- **Download PDF:** a letter-size report with a title block, a category summary, and one table per category (photo thumbnail, item, description, notes, confidence, file name, value range). Every page has a disclaimer and page numbers.
+- **Download spreadsheet (CSV):** one row per item, sorted by category, for Excel or Google Sheets.
+
+Only analyzed photos are exported. The section shows how many aren't analyzed yet. Both files are created entirely in the browser.
+
+| To change... | Edit |
+|---|---|
+| CSV columns | `toCSV()` in `js/inventory-export.js` |
+| PDF layout, colors, or disclaimer | `buildPDF()` / `DISCLAIMER` in `js/inventory-export.js` |
+| Category order | `CATEGORY_ORDER` in `js/inventory-export.js` (**keep in sync with `CATEGORIES` in `server.js`**) |
+| Thumbnail size in the PDF | `THUMB_SIZE` in `js/inventory.js` and `PHOTO` in `buildPDF()` |
+
+Implementation notes:
+
+- PDFs are made with [jsPDF](https://github.com/parallax/jsPDF) **4.2.1** and [jsPDF-AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable) **5.0.8**, both MIT-licensed. They're copied into `js/vendor/` so the site doesn't depend on a CDN, and they're only downloaded when someone clicks **Download PDF** (~450 KB). To upgrade, replace both files with the new versions' `dist/*.min.js` and update the versions listed here.
+- A 240px square thumbnail of each photo is made during analysis and kept in the browser for the PDF. It's never sent to the server.
+- CSV cells that start with `=`, `+`, `-`, or `@` get a leading `'` so spreadsheet apps don't treat AI-generated text as a formula.
+
 ### Next steps (discuss with the team first)
 
 1. **Web search for current prices:** let Claude look up real listings and return source links with the estimate.
-2. **Save the inventory** between visits (in the browser, for example IndexedDB) and add CSV/PDF export for insurers.
+2. **Save the inventory** between visits (in the browser, for example IndexedDB). Right now, export is the only way to keep it.
 3. **Let users edit the AI's answer** (brand, material, karat) and re-estimate.
 4. **Analyze all** button for analyzing several photos at once.
 
@@ -277,9 +312,11 @@ Many visitors will be stressed, older, or on a phone. Before opening a pull requ
 
 ## Deployment
 
-The site now runs as a Node.js app, because the AI feature needs `server.js`. A plain static host (GitHub Pages, or copying files into `/var/www/html`) will serve the pages, but *Analyze with AI* won't work there.
+The site now runs as a Node.js app, because the AI feature needs `server.js`. A plain static host (GitHub Pages, or copying files into `/var/www/html`) will serve the pages, but *Analyze with AI* won't, and export depends on it. **Never put the API key in front-end code to work around this**, because GitHub Pages sites and their repos are public.
 
-On your web server:
+**Easiest option: Render.** Create a Web Service from this GitHub repo with build command `npm install` and start command `npm start`, then add `ANTHROPIC_API_KEY` under *Environment*. It redeploys on every push to `main`. The free plan sleeps after about 15 minutes idle, so the first visit after that is slow.
+
+**Your own server:**
 
 1. Install Node.js 22+.
 2. Copy the project (or `git clone` it) and run `npm install --omit=dev`.
@@ -295,7 +332,8 @@ Ideas for later versions. Discuss with the team before starting.
 
 - [ ] Replace every placeholder with verified content and sources
 - [x] AI home inventory: photo upload, backend endpoint, AI categorization and value estimates
-- [ ] AI home inventory, next: web-search pricing, saved inventory, CSV/PDF export (see [Home inventory feature](#home-inventory-feature-inventoryhtml))
+- [x] AI home inventory: CSV/PDF export grouped by category
+- [ ] AI home inventory, next: web-search pricing, saved inventory (see [Home inventory feature](#home-inventory-feature-inventoryhtml))
 - [ ] About and Contact pages
 - [ ] "My claim was denied" guide for each claim type
 - [ ] Hurricane season landing page

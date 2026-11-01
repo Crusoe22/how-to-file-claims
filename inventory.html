@@ -7,6 +7,7 @@
   <meta name="description" content="Upload photos of your valuable household items to start a home inventory for insurance.">
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/main.js" defer></script>
+  <script src="js/inventory-export.js" defer></script>
   <script src="js/inventory.js" defer></script>
 </head>
 <body>
@@ -60,6 +61,32 @@
         </div>
         <p id="empty-state" class="section-intro">No photos yet. Add your first item above.</p>
         <ul class="photo-grid" id="photo-grid"></ul>
+      </section>
+
+      <section id="export-section" aria-labelledby="export-heading" hidden>
+        <h2 id="export-heading">Export your inventory</h2>
+        <p class="section-intro">Download your analyzed items, grouped by category, to keep for your records or send to your insurance agent. The <strong>spreadsheet (CSV)</strong> opens in Excel or Google Sheets. The <strong>PDF</strong> includes photos and is ready to email.</p>
+
+        <div id="export-summary"></div>
+        <p id="export-pending" class="export-pending" hidden></p>
+
+        <div class="export-fields">
+          <div class="field">
+            <label for="prepared-for">Your name <span class="optional">(optional)</span></label>
+            <input type="text" id="prepared-for" autocomplete="name" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="policy-number">Policy number <span class="optional">(optional)</span></label>
+            <input type="text" id="policy-number" autocomplete="off" maxlength="40">
+          </div>
+        </div>
+        <p class="field-hint">These appear only on your PDF. They're never sent anywhere.</p>
+
+        <div class="export-actions">
+          <button type="button" class="btn" id="export-pdf" disabled>Download PDF</button>
+          <button type="button" class="btn btn-secondary" id="export-csv" disabled>Download spreadsheet (CSV)</button>
+        </div>
+        <p class="field-hint">Photos are cleared when you leave this page, so download your export before closing.</p>
       </section>
 
       <h2>About AI estimates</h2>

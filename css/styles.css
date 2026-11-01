@@ -498,3 +498,46 @@ th { background: #eef3f7; font-weight: 600; }
 .analysis-notes { color: var(--color-muted); font-style: italic; }
 .analysis-disclaimer { font-size: 0.75rem; color: var(--color-muted); }
 .analysis-error { color: var(--color-placeholder-text); font-size: 0.9rem; margin-top: var(--space-1) !important; }
+
+/* ---------- Inventory: export section ---------- */
+#export-section {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+#export-section h2 { margin-top: 0; }
+#export-section table { margin-bottom: var(--space-2); }
+#export-section .num { text-align: right; white-space: nowrap; }
+#export-section .total-row th,
+#export-section .total-row td { font-weight: 700; background: #eef3f7; border-bottom: none; }
+
+.export-pending { color: var(--color-placeholder-text); font-size: 0.95rem; }
+
+.export-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.field label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+.field .optional { font-weight: 400; color: var(--color-muted); }
+.field input {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+}
+.field-hint { font-size: 0.85rem; color: var(--color-muted); margin-top: var(--space-1); }
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+.export-actions .btn { cursor: pointer; font: inherit; font-weight: 600; }
+.export-actions .btn:disabled { opacity: 0.5; cursor: not-allowed; }
