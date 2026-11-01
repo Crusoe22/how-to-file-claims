@@ -28,7 +28,7 @@ A free, educational website that explains, in plain language, how to file **heal
 ## Project goals
 
 - **Audience:** Florida residents filing an insurance claim, often for the first time and often under stress (for example, after a hurricane or car accident).
-- **Scope (v1):** education only. We explain the process and link to official resources. We do **not** file claims, collect personal data, or give legal advice.
+- **Scope (v1):** education, plus an AI home inventory tool. We explain the process and link to official resources. We do **not** file claims, store users' personal data or photos, or give legal advice.
 - **Claim types:** Health, Auto, and Home & Property.
 - **Tone:** plain language at about an 8th-grade reading level. Short sentences and clear steps.
 
@@ -38,10 +38,12 @@ A free, educational website that explains, in plain language, how to file **heal
 |---|---|---|
 | Markup | HTML5 | Works on any web server with no build step |
 | Styling | Plain CSS (custom properties) | No preprocessor needed |
-| Behavior | Vanilla JavaScript (ES6+) | No frameworks or dependencies |
+| Front-end behavior | Vanilla JavaScript (ES6+) | No frameworks or dependencies in the browser |
+| Server | Node.js 22+ with Express (`server.js`) | Serves the site and holds the AI API key |
+| AI | Claude API (`@anthropic-ai/sdk`) | Identifies and values items in inventory photos |
 | Build | **None** | Every file is served as-is |
 
-There is no `npm install` and no bundler. If you can open an HTML file, you can work on this project.
+The pages themselves are plain HTML/CSS/JS with no bundler. The only server code is `server.js`, which exists because the AI feature needs a secret API key that can't live in the browser.
 
 ## Getting started
 
@@ -49,27 +51,29 @@ There is no `npm install` and no bundler. If you can open an HTML file, you can 
 
 - Git
 - A code editor (VS Code recommended)
-- One way to run a local web server (any of these):
-  - Python 3 (already installed on most Macs and Linux machines)
-  - Node.js 18+
-  - The VS Code **Live Server** extension
+- **Node.js 22 or newer** (check with `node --version`)
+- *For the AI feature only:* an Anthropic API key from <https://console.anthropic.com>. Ask the project lead for a development key; don't create a shared key on a personal account.
 
 ### Run it locally
 
 ```bash
 git clone <repo-url>
 cd how-to-file-claims
+npm install
 
-# Option A: Python
-python3 -m http.server 8000
+# Set up your secrets file (only needed for the AI feature)
+cp .env.example .env
+# then open .env and paste your key after ANTHROPIC_API_KEY=
 
-# Option B: Node
-npx serve .
+npm start        # or: npm run dev (restarts when server.js changes)
 ```
 
-Then open <http://localhost:8000> (or the URL `serve` prints).
+Then open <http://localhost:3000>.
 
-> **Tip:** use a local server instead of double-clicking the HTML files. Opening files directly (`file://`) works for now, but it will break once we add features that load data with `fetch()`.
+- **No API key?** The whole site still works. Only the inventory page's *Analyze with AI* button will show "AI analysis isn't set up on this server yet."
+- **Only editing HTML/CSS?** `python3 -m http.server 8000` still works for the static pages, but *Analyze with AI* will tell you to run `npm start`.
+
+> 🔐 **Never commit `.env` or paste an API key into any file under `js/`.** `.env` is already in `.gitignore`. If a key is ever committed, revoke it in the Anthropic Console immediately; deleting the commit is not enough.
 
 ## Project structure
 
@@ -80,14 +84,18 @@ how-to-file-claims/
 ├── auto.html         # Auto insurance claim guide (PIP / no-fault)
 ├── home.html         # Home & property claim guide (hurricane, water, etc.)
 ├── resources.html    # Filterable table of Florida help resources
-├── inventory.html    # Home inventory: photo upload (MVP of the AI inventory feature)
+├── inventory.html    # Home inventory: photo upload + AI analysis
 ├── css/
 │   └── styles.css    # All site styles (tokens → base → layout → components)
 ├── js/
 │   ├── main.js       # Nav toggle, active-link highlight, resource filter
-│   └── inventory.js  # Photo intake for inventory.html only
+│   └── inventory.js  # Photo intake and "Analyze with AI" for inventory.html
 ├── assets/
 │   └── images/       # Images and icons (currently empty)
+├── server.js         # Express server: serves the site + POST /api/analyze
+├── package.json      # Server dependencies and npm scripts
+├── .env.example      # Template for .env (copy it; never commit .env)
+├── .gitignore
 └── README.md
 ```
 
@@ -139,22 +147,75 @@ The site must still be **usable without JavaScript**. Treat JS as an enhancement
 
 The long-term goal is an AI-assisted home inventory. Users photograph valuables such as jewelry and electronics, and AI identifies, categorizes, and estimates the value of each item so the user can insure it.
 
-**Current MVP (photo upload only):**
+### Photo upload
 
 - Users add photos by drag-and-drop or the "Choose photos" button. On phones, that button also lets them take a photo.
-- Each photo shows as a card with a preview, file name, size, and a Remove button. "Remove all" clears the list.
+- Each photo shows as a card with a preview, file name, size, an **Analyze with AI** button, and a Remove button. "Remove all" clears the list.
 - Limits: images only (HEIC is accepted by file extension), up to 15 MB each, 50 photos total. These are set by `MAX_FILE_MB` and `MAX_PHOTOS` at the top of `js/inventory.js`.
-- **Photos never leave the browser.** They're held in memory as object URLs and cleared on refresh. There's no server, storage, or AI yet.
-- Most browsers other than Safari can't display HEIC (iPhone) photos. The file is still kept, but the card shows "Preview not available."
+- Photos are held in browser memory and cleared on refresh. Nothing is saved anywhere.
+- Most browsers other than Safari can't display HEIC (iPhone) photos. The card shows "Preview not available," and analysis asks for a JPG or PNG instead.
 
-**Planned next steps** (discuss with the team first):
+### How "Analyze with AI" works
 
-1. Save the inventory between visits (in the browser, for example IndexedDB) and add CSV export.
-2. Add a small backend endpoint to hold the AI API key. **API keys must never go in front-end JS or be committed to Git.**
-3. AI identification and categorization of each photo.
-4. AI price estimates with source links, shown as estimates rather than appraisals.
+```
+inventory.js                        server.js                         Claude API
+─────────────                       ─────────                         ──────────
+1. Shrink photo to ≤1568px,
+   re-encode as JPEG (this also
+   strips GPS/location data)
+2. POST /api/analyze  ───────────▶  3. Validate type/size, rate-limit
+   { mediaType, data(base64) }      4. Send image + prompt  ────────▶ 5. Identify, categorize,
+                                                                         estimate value
+                                    6. Return JSON  ◀──────────────── (fixed JSON schema)
+7. Show result on the card  ◀─────
+```
 
-The `photos` array in `js/inventory.js` is what the AI step will read from.
+The server returns this JSON shape. Claude is required to match it exactly:
+
+```json
+{
+  "item_name": "Stainless steel dive watch",
+  "category": "Jewelry & Watches",
+  "description": "Black dial, rotating bezel, steel bracelet. Brand not visible.",
+  "estimated_value_low": 150,
+  "estimated_value_high": 400,
+  "confidence": "medium",
+  "notes": "A photo of the dial logo or the serial number would narrow this down."
+}
+```
+
+`category` is always one of: Jewelry & Watches, Electronics, Art & Collectibles, Furniture, Appliances, Designer Clothing & Accessories, Musical Instruments, Sporting Goods & Tools, Other (the `CATEGORIES` list in `server.js`).
+
+**Where to change things:**
+
+| To change... | Edit |
+|---|---|
+| What Claude is told to do, or how it phrases things | `SYSTEM_PROMPT` in `server.js` |
+| The fields returned or the category list | `ANALYSIS_SCHEMA` / `CATEGORIES` in `server.js`, then `resultBlock()` in `js/inventory.js` |
+| Model or effort level | `MODEL` and `output_config.effort` in `analyzeImage()` |
+| Requests allowed per visitor | `analyzeLimiter` in `server.js` (currently 10 per minute) |
+| Upload image size or quality | `ANALYZE_MAX_EDGE` / `ANALYZE_QUALITY` in `js/inventory.js` |
+| How results look | `resultBlock()` in `js/inventory.js` and the `.analysis` styles in `css/styles.css` |
+
+**Safeguards already in place:**
+
+- The API key is read only by the server, from `.env`. The browser never sees it.
+- The server serves only `css/`, `js/`, `assets/`, and top-level `.html` files. `.env`, `server.js`, `package.json`, and `node_modules/` return 404.
+- Images must be JPEG/PNG/WebP/GIF and at most 5 MB. Requests over 8 MB are rejected.
+- Rate limiting is 10 analyses per minute per visitor, because every call costs money.
+- Errors are shown to users in plain language. Internal details and API errors are logged only on the server.
+- Photos are not stored on the server. Each one is sent to Claude and then discarded.
+- All AI text is inserted with `textContent`, never `innerHTML`.
+- Every result says "AI estimate, not an appraisal."
+
+**Estimates come from Claude's general knowledge, not live prices.** Treat them as ballpark figures.
+
+### Next steps (discuss with the team first)
+
+1. **Web search for current prices:** let Claude look up real listings and return source links with the estimate.
+2. **Save the inventory** between visits (in the browser, for example IndexedDB) and add CSV/PDF export for insurers.
+3. **Let users edit the AI's answer** (brand, material, karat) and re-estimate.
+4. **Analyze all** button for analyzing several photos at once.
 
 ## Placeholder content
 
@@ -216,19 +277,25 @@ Many visitors will be stressed, older, or on a phone. Before opening a pull requ
 
 ## Deployment
 
-Because the site is fully static, you can deploy it by uploading the project folder to any web server's document root. No build step is needed.
+The site now runs as a Node.js app, because the AI feature needs `server.js`. A plain static host (GitHub Pages, or copying files into `/var/www/html`) will serve the pages, but *Analyze with AI* won't work there.
 
-- **Apache / Nginx:** copy the files into the web root (for example, `/var/www/html`). `index.html` is served by default.
-- **Static hosts:** GitHub Pages, Netlify, Cloudflare Pages, or similar. Point them at the repo root with no build command.
+On your web server:
 
-Files to exclude from the server: `.git/` and `README.md` (optional).
+1. Install Node.js 22+.
+2. Copy the project (or `git clone` it) and run `npm install --omit=dev`.
+3. Set `ANTHROPIC_API_KEY` (and optionally `PORT`) as an environment variable, or in a `.env` file that only the app's user can read (`chmod 600 .env`). Use a **separate production key** from development keys.
+4. Start it with `npm start`, kept running by a process manager (systemd, pm2, or similar).
+5. Put Nginx or Apache in front of it as a reverse proxy to `http://localhost:3000`, with HTTPS enabled. If you do, add `app.set("trust proxy", 1)` in `createApp()` so rate limiting sees each visitor's real IP address instead of the proxy's.
+
+Set a monthly spending limit in the Anthropic Console so a bug or abuse can't run up an unexpected bill.
 
 ## Roadmap
 
 Ideas for later versions. Discuss with the team before starting.
 
 - [ ] Replace every placeholder with verified content and sources
-- [ ] AI home inventory: saved inventory, backend endpoint, AI categorization, value estimates (see [Home inventory feature](#home-inventory-feature-inventoryhtml))
+- [x] AI home inventory: photo upload, backend endpoint, AI categorization and value estimates
+- [ ] AI home inventory, next: web-search pricing, saved inventory, CSV/PDF export (see [Home inventory feature](#home-inventory-feature-inventoryhtml))
 - [ ] About and Contact pages
 - [ ] "My claim was denied" guide for each claim type
 - [ ] Hurricane season landing page

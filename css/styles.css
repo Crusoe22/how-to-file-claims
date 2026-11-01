@@ -445,7 +445,6 @@ th { background: #eef3f7; font-weight: 600; }
 }
 .photo-size { color: var(--color-muted); font-size: 0.85rem; }
 .photo-remove {
-  margin-top: var(--space-1);
   background: none;
   border: none;
   padding: 0;
@@ -455,3 +454,47 @@ th { background: #eef3f7; font-weight: 600; }
   text-decoration: underline;
   cursor: pointer;
 }
+
+.photo-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+.btn-small {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+.btn-small:disabled { opacity: 0.6; cursor: progress; }
+
+/* AI analysis result shown inside a photo card */
+.analysis {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+.analysis p { margin: 0 0 0.25rem; }
+.analysis-category {
+  display: inline-block;
+  background: #e6f4f1;
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+.analysis-name { font-weight: 700; }
+.analysis-value { font-size: 1.05rem; font-weight: 700; color: var(--color-primary); }
+.analysis-confidence { font-size: 0.8rem; color: var(--color-muted); }
+.analysis-confidence.confidence-low { color: var(--color-placeholder-text); }
+.analysis-description { color: var(--color-text); }
+.analysis-notes { color: var(--color-muted); font-style: italic; }
+.analysis-disclaimer { font-size: 0.75rem; color: var(--color-muted); }
+.analysis-error { color: var(--color-placeholder-text); font-size: 0.9rem; margin-top: var(--space-1) !important; }
