@@ -355,3 +355,103 @@ th { background: #eef3f7; font-weight: 600; }
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- Inventory: photo upload (inventory.html) ---------- */
+.dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: var(--space-4) var(--space-2);
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dropzone.is-dragging {
+  border-color: var(--color-primary);
+  background: #eef4fa;
+}
+.dropzone .icon { font-size: 2.5rem; }
+.dropzone p { margin-bottom: var(--space-1); }
+.dropzone .btn { cursor: pointer; }
+.dropzone:focus-within .btn {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.dropzone-hint {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  margin-top: var(--space-2);
+}
+
+.upload-status { min-height: 1.6em; margin-top: var(--space-1); color: var(--color-accent); }
+.upload-status.is-warning { color: var(--color-placeholder-text); }
+
+.photos-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+.btn-secondary:hover { background: #eef4fa; color: var(--color-primary-dark); }
+
+.photo-grid {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+.photo-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #eef3f7;
+}
+.photo-card .no-preview {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  background: #eef3f7;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: var(--space-1);
+}
+.photo-info { padding: var(--space-1); }
+.photo-info p { margin: 0; }
+.photo-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.photo-size { color: var(--color-muted); font-size: 0.85rem; }
+.photo-remove {
+  margin-top: var(--space-1);
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-placeholder-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Inventory | FL Claims Guide</title>
+  <meta name="description" content="Upload photos of your valuable household items to start a home inventory for insurance.">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/main.js" defer></script>
+  <script src="js/inventory.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- ===== HEADER (keep in sync across all pages) ===== -->
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="index.html">FL <span>Claims Guide</span></a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav id="site-nav" class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="health.html">Health</a></li>
+          <li><a href="auto.html">Auto</a></li>
+          <li><a href="home.html">Home &amp; Property</a></li>
+          <li><a href="inventory.html">Inventory</a></li>
+          <li><a href="resources.html">Resources</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <!-- ===== END HEADER ===== -->
+
+  <main id="main">
+    <div class="container">
+      <h1>Home inventory</h1>
+      <p class="section-intro">Add photos of your valuable items, like jewelry, electronics, and art. A photo inventory makes it easier to insure your belongings and to prove what you owned if you ever need to file a claim.</p>
+
+      <div class="callout">
+        <p><strong>Your photos stay on your device.</strong> Nothing is uploaded to a server. Photos are cleared when you leave or refresh this page.</p>
+      </div>
+
+      <section aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="visually-hidden">Add photos</h2>
+        <div class="dropzone" id="dropzone">
+          <div class="icon" aria-hidden="true">📷</div>
+          <p><strong>Drag and drop photos here</strong></p>
+          <p>or</p>
+          <label class="btn" for="photo-input">Choose photos</label>
+          <input class="visually-hidden" type="file" id="photo-input" accept="image/*" multiple>
+          <p class="dropzone-hint">JPG, PNG, HEIC, or WebP · up to <span id="max-size"></span> MB each</p>
+        </div>
+        <p id="upload-status" class="upload-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section aria-labelledby="photos-heading">
+        <div class="photos-header">
+          <h2 id="photos-heading">Your photos (<span id="photo-count">0</span>)</h2>
+          <button type="button" class="btn btn-secondary" id="clear-all" hidden>Remove all</button>
+        </div>
+        <p id="empty-state" class="section-intro">No photos yet. Add your first item above.</p>
+        <ul class="photo-grid" id="photo-grid"></ul>
+      </section>
+
+      <h2>Coming soon</h2>
+      <p class="section-intro">We're working on AI-powered features that will identify and categorize each item and estimate what it's worth.</p>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER (keep in sync across all pages) ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <p><strong>FL Claims Guide</strong>: free, plain-language education about insurance claims in Florida.</p>
+      <p><a href="resources.html">Resources</a> · <a href="#" class="placeholder">[PLACEHOLDER: About]</a> · <a href="#" class="placeholder">[PLACEHOLDER: Contact]</a></p>
+      <p class="disclaimer">This site is for educational purposes only and is not legal, financial, or insurance advice. Always check your specific policy and consult a licensed professional for your situation. © <span id="year"></span> FL Claims Guide.</p>
+    </div>
+  </footer>
+  <!-- ===== END FOOTER ===== -->
+</body>
+</html>

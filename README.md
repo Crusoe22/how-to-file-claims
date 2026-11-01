@@ -13,6 +13,7 @@ A free, educational website that explains, in plain language, how to file **heal
 - [Getting started](#getting-started)
 - [Project structure](#project-structure)
 - [How the pages are built](#how-the-pages-are-built)
+- [Home inventory feature](#home-inventory-feature-inventoryhtml)
 - [Placeholder content](#placeholder-content)
 - [Adding a new page](#adding-a-new-page)
 - [Coding conventions](#coding-conventions)
@@ -79,10 +80,12 @@ how-to-file-claims/
 ├── auto.html         # Auto insurance claim guide (PIP / no-fault)
 ├── home.html         # Home & property claim guide (hurricane, water, etc.)
 ├── resources.html    # Filterable table of Florida help resources
+├── inventory.html    # Home inventory: photo upload (MVP of the AI inventory feature)
 ├── css/
 │   └── styles.css    # All site styles (tokens → base → layout → components)
 ├── js/
-│   └── main.js       # Nav toggle, active-link highlight, resource filter
+│   ├── main.js       # Nav toggle, active-link highlight, resource filter
+│   └── inventory.js  # Photo intake for inventory.html only
 ├── assets/
 │   └── images/       # Images and icons (currently empty)
 └── README.md
@@ -130,7 +133,28 @@ Colors, spacing, and fonts are CSS variables at the top of `styles.css`. Change 
 3. **Footer year:** fills `#year`.
 4. **Resource filter:** on `resources.html`, buttons with `data-filter` show or hide rows with matching `data-category` values.
 
-The site must still be **usable without JavaScript**. Treat JS as an enhancement only.
+The site must still be **usable without JavaScript**. Treat JS as an enhancement only. The one exception is the inventory page, which needs JS.
+
+## Home inventory feature (`inventory.html`)
+
+The long-term goal is an AI-assisted home inventory. Users photograph valuables such as jewelry and electronics, and AI identifies, categorizes, and estimates the value of each item so the user can insure it.
+
+**Current MVP (photo upload only):**
+
+- Users add photos by drag-and-drop or the "Choose photos" button. On phones, that button also lets them take a photo.
+- Each photo shows as a card with a preview, file name, size, and a Remove button. "Remove all" clears the list.
+- Limits: images only (HEIC is accepted by file extension), up to 15 MB each, 50 photos total. These are set by `MAX_FILE_MB` and `MAX_PHOTOS` at the top of `js/inventory.js`.
+- **Photos never leave the browser.** They're held in memory as object URLs and cleared on refresh. There's no server, storage, or AI yet.
+- Most browsers other than Safari can't display HEIC (iPhone) photos. The file is still kept, but the card shows "Preview not available."
+
+**Planned next steps** (discuss with the team first):
+
+1. Save the inventory between visits (in the browser, for example IndexedDB) and add CSV export.
+2. Add a small backend endpoint to hold the AI API key. **API keys must never go in front-end JS or be committed to Git.**
+3. AI identification and categorization of each photo.
+4. AI price estimates with source links, shown as estimates rather than appraisals.
+
+The `photos` array in `js/inventory.js` is what the AI step will read from.
 
 ## Placeholder content
 
@@ -204,6 +228,7 @@ Files to exclude from the server: `.git/` and `README.md` (optional).
 Ideas for later versions. Discuss with the team before starting.
 
 - [ ] Replace every placeholder with verified content and sources
+- [ ] AI home inventory: saved inventory, backend endpoint, AI categorization, value estimates (see [Home inventory feature](#home-inventory-feature-inventoryhtml))
 - [ ] About and Contact pages
 - [ ] "My claim was denied" guide for each claim type
 - [ ] Hurricane season landing page
