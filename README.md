@@ -1,12 +1,12 @@
 # How to File Claims: FL Claims Guide
 
-A free, educational website that explains, in plain language, how to file **health, auto, and home insurance claims in Florida** and points people to the resources that can help them. It also includes an **AI home inventory tool**: users photograph their valuables, AI identifies and values each item, and they download a PDF or CSV to send to their insurer.
+A free, educational website that explains, in plain language, how to file **auto and home insurance claims in Florida** and points people to the resources that can help them. It also includes an **AI home inventory tool**: users photograph their valuables, AI identifies and values each item, and they download a PDF or CSV to send to their insurer.
 
 > **Status (November 2026)**
 >
 > | Area | State |
 > |---|---|
-> | Claim guides (health, auto, home) and resources page | ✅ Built. ⚠️ Most facts, phone numbers, deadlines, and links are **placeholders** that must be verified before launch. See [Placeholder content](#placeholder-content). |
+> | Claim guides (auto, home) and resources page | ✅ Built. ⚠️ Most facts, phone numbers, deadlines, and links are **placeholders** that must be verified before launch. See [Placeholder content](#placeholder-content). |
 > | Home inventory: photo upload | ✅ Done |
 > | Home inventory: AI identification, category, and value estimate | ✅ Done. Needs an API key; see [Getting started](#getting-started). |
 > | Home inventory: PDF/CSV export | ✅ Done |
@@ -38,7 +38,7 @@ A free, educational website that explains, in plain language, how to file **heal
 
 - **Audience:** Florida residents filing an insurance claim, often for the first time and often under stress (for example, after a hurricane or car accident).
 - **Scope (v1):** education, plus an AI home inventory tool. We explain the process and link to official resources. We do **not** file claims, store users' personal data or photos, or give legal advice.
-- **Claim types:** Health, Auto, and Home & Property.
+- **Claim types:** Auto and Home & Property.
 - **Tone:** plain language at about an 8th-grade reading level. Short sentences and clear steps.
 
 ## Tech stack
@@ -89,7 +89,6 @@ Then open <http://localhost:3000>.
 ```
 how-to-file-claims/
 ├── index.html        # Landing page: choose a claim type, basic steps
-├── health.html       # Health insurance claim guide
 ├── auto.html         # Auto insurance claim guide (PIP / no-fault)
 ├── home.html         # Home & property claim guide (hurricane, water, etc.)
 ├── resources.html    # Filterable table of Florida help resources
@@ -268,14 +267,14 @@ grep -rn "placeholder" --include="*.html" .
 
 **Rules for replacing placeholders:**
 
-1. Use **official sources** only (Florida DFS, OIR, FLHSMV, AHCA, Citizens, FEMA/NFIP, or the insurer itself).
+1. Use **official sources** only (Florida DFS, OIR, FLHSMV, Citizens, FEMA/NFIP, or the insurer itself).
 2. Add the source link in your pull request description.
 3. Remove the `placeholder` class once the content is verified.
 4. Insurance law changes often, especially Florida property insurance. Note the date you verified the information.
 
 ## Adding a new page
 
-1. Copy an existing guide page (for example, `health.html`) to `new-page.html`.
+1. Copy an existing guide page (for example, `auto.html`) to `new-page.html`.
 2. Update the `<title>` and `<meta name="description">`.
 3. Replace the content inside `<main>`.
 4. If it belongs in the main nav, add the link to the header on **every** page.

@@ -35,8 +35,8 @@
   }
 
   /* ---------- Resource table filter (resources.html) ----------
-     Buttons carry data-filter="all|health|auto|home|general".
-     Table rows carry data-category="health auto" etc. */
+     Buttons carry data-filter="all|auto|home|general".
+     Table rows carry data-category="auto home" etc. */
   function initResourceFilter() {
     const bar = document.querySelector(".filter-bar");
     if (!bar) return;
